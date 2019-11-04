@@ -8,7 +8,7 @@ import asyncio as aio
 from datetime import datetime
 
 # module
-from avwx_api_core.counter.counter import DelayedCounter
+from avwx_api_core.counter.base import DelayedCounter
 
 
 TOKEN_QUERY = """
