@@ -2,7 +2,7 @@
 avwx_api_core Package Setup
 """
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
@@ -29,6 +29,6 @@ setup(
         "quart-openapi>=1.4",
         "voluptuous~=0.11",
     ],
-    packages=["avwx_api_core"],
+    packages=find_packages(),
     tests_require=["pytest-asyncio~=0.10"],
 )
