@@ -22,6 +22,7 @@ setup(
         "asyncpg~=0.19",
         'dataclasses>=0.7;python_version<"3.7"',
         "dicttoxml~=1.7",
+        "dnspython~=1.16",
         "motor~=2.0",
         "pyyaml~=5.1",
         "quart~=0.10",
