@@ -3,12 +3,11 @@ MongoDB document cache management
 """
 
 # stdlib
-import asyncio as aio
 from copy import copy
 from datetime import datetime, timedelta
 
-# library
-from pymongo.errors import AutoReconnect, OperationFailure
+# module
+from avwx_api_core.util.handler import mongo_handler
 
 
 # Table expiration in minutes
@@ -55,20 +54,6 @@ class CacheManager:
         minutes = self.expires.get(table, DEFAULT_EXPIRES)
         return datetime.utcnow() > time + timedelta(minutes=minutes)
 
-    @staticmethod
-    async def _call(op: "coroutine") -> object:
-        """
-        Error handling around the Mongo client connection
-        """
-        for _ in range(5):
-            try:
-                resp = await op
-                return resp
-            except OperationFailure:
-                return
-            except AutoReconnect:
-                await aio.sleep(0.5)
-
     async def get(self, table: str, key: str, force: bool = False) -> {str: object}:
         """
         Returns the current cached data for a report type and station or None
@@ -79,7 +64,7 @@ class CacheManager:
         if self._app.mdb is None:
             return
         op = self._app.mdb.cache[table.lower()].find_one({"_id": key})
-        data = await self._call(op)
+        data = await mongo_handler(op)
         data = _replace_keys(data, "_$", "$")
         if force:
             return data
@@ -100,5 +85,5 @@ class CacheManager:
         op = self._app.mdb.cache[table.lower()].update_one(
             {"_id": key}, {"$set": data}, upsert=True
         )
-        await self._call(op)
+        await mongo_handler(op)
         return

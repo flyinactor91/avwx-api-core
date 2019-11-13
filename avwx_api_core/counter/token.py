@@ -9,6 +9,7 @@ from datetime import datetime
 
 # module
 from avwx_api_core.counter.base import DelayedCounter
+from avwx_api_core.util.handler import mongo_handler
 
 
 TOKEN_QUERY = """
@@ -66,7 +67,7 @@ class TokenCountCache(DelayedCounter):
             return
         key = date_key()
         op = self._app.mdb.counter.token.find_one({"_id": user}, {"_id": 0, key: 1})
-        data = await self._app.cache._call(op)
+        data = await mongo_handler(op)
         if not data:
             return 0
         return data.get(key, 0)

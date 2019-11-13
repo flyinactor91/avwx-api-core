@@ -126,7 +126,6 @@ class AuthView(BaseView):
     """
 
     # Filename of the sample response when token validation fails
-    # Only required if different than report_type
     example: str = None
 
     # Whitelist of token plan types to access this endpoint
