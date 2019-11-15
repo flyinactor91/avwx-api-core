@@ -27,7 +27,7 @@ class Token:
         """
         Returns if a token is an active paid token
         """
-        return self.active and self.type == "paid"
+        return self.active and self.type != "free"
 
     def valid_type(self, types: [str]) -> bool:
         """
