@@ -160,7 +160,7 @@ class AuthView(BaseView):
         """
         Load the example payload for the endpoint
         """
-        raise NotImplementedError()
+        return {}
 
     def make_example_response(self, error_code: int) -> dict:
         """
@@ -168,9 +168,10 @@ class AuthView(BaseView):
         """
         data = self.get_example_file()
         msg = VALIDATION_ERROR_MESSAGES[error_code]
-        msg += " Here's an example response for testing purposes"
+        if data:
+            msg += " Here's an example response for testing purposes"
         if isinstance(data, dict):
             data["meta"] = {"validation_error": msg}
         elif isinstance(data, list):
-            data.insert(0, {"validation_error": msg})
+            data.insert(0, {"validation_error": msg}) #pylint: disable=no-member
         return data
