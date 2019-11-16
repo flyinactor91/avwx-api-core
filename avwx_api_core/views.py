@@ -100,10 +100,10 @@ def make_token_check(app: "Quart") -> Callable:
 
         @wraps(func)
         async def wrapper(self, *args, **kwargs):
-            err_code = await self.validate_token(app.token)
-            if isinstance(err_code, int):
-                data = self.make_example_response(err_code)
-                return self.make_response(data, code=err_code)
+            code, token = await self.validate_token(app.token)
+            if code != 200:
+                data = self.make_example_response(code, token)
+                return self.make_response(data, code=code)
             return await func(self, *args, **kwargs)
 
         return wrapper
@@ -113,7 +113,7 @@ def make_token_check(app: "Quart") -> Callable:
 
 VALIDATION_ERROR_MESSAGES = {
     401: 'You are missing the "Authorization" header or "token" parameter.',
-    403: "Your auth token could not be found, is inactive, or does not have permission to access this resource.",
+    403: "Your auth token ",
     429: "Your auth token has hit it's daily rate limit. Considder upgrading your plan.",
 }
 
@@ -132,29 +132,29 @@ class AuthView(BaseView):
     # If None, all tokens are allowed
     plan_types: (str,) = None
 
-    async def validate_token(self, token_manager: "TokenManager") -> "str/int":
+    async def validate_token(self, token_manager: "TokenManager") -> (int, "Token"):
         """
         Validates thats an authorization token exists and is active
 
-        Returns the token if valid or the error code if not valid
+        Returns the response code and Token object
         """
         if not token_manager.active:
-            return
+            return 200, None
         auth_token = request.headers.get("Authorization") or request.args.get("token")
         try:
             auth_token = validate.Token(auth_token)
         except (Invalid, MultipleInvalid):
-            return 401
+            return 401, None
         auth_token = await token_manager.get(auth_token)
-        if auth_token is None:
-            return 403
+        if auth_token is None or not auth_token.active:
+            return 403, auth_token
         if self.plan_types:
             if not auth_token.valid_type(self.plan_types):
-                return 403
+                return 403, auth_token
         # Increment returns False if rate limit exceeded
         if auth_token and not await token_manager.increment(auth_token):
-            return 429
-        return auth_token
+            return 429, auth_token
+        return 200, auth_token
 
     def get_example_file(self) -> dict:
         """
@@ -162,16 +162,25 @@ class AuthView(BaseView):
         """
         return {}
 
-    def make_example_response(self, error_code: int) -> dict:
+    def make_example_response(self, error_code: int, token: "Token") -> dict:
         """
         Returns an example payload when validation fails
         """
         data = self.get_example_file()
         msg = VALIDATION_ERROR_MESSAGES[error_code]
+        # Special handling for 403 errors
+        if error_code == 403:
+            if token is None:
+                msg += "could not be found"
+            elif not token.active:
+                msg += "is inactive"
+            elif not token.valid_type(self.plan_types):
+                msg += f"plan ({token.type}) does not have permission to access this resource"
+                msg += f". Requires a plan of type: {'/'.join(self.plan_types or [])}"
         if data:
-            msg += " Here's an example response for testing purposes"
+            msg += ". Here's an example response for testing purposes"
         if isinstance(data, dict):
             data["meta"] = {"validation_error": msg}
         elif isinstance(data, list):
-            data.insert(0, {"validation_error": msg}) #pylint: disable=no-member
+            data.insert(0, {"validation_error": msg})  # pylint: disable=no-member
         return data
