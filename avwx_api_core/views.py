@@ -112,9 +112,9 @@ def make_token_check(app: "Quart") -> Callable:
 
 
 VALIDATION_ERROR_MESSAGES = {
-    401: 'You are missing the "Authorization" header or "token" parameter.',
+    401: 'You are missing the "Authorization" header or "token" parameter',
     403: "Your auth token ",
-    429: "Your auth token has hit it's daily rate limit. Considder upgrading your plan.",
+    429: "Your auth token has hit it's daily rate limit. Considder upgrading your plan",
 }
 
 EXAMPLE_PATH = Path(__file__).parent / "examples"
@@ -152,8 +152,9 @@ class AuthView(BaseView):
             if not auth_token.valid_type(self.plan_types):
                 return 403, auth_token
         # Increment returns False if rate limit exceeded
-        if auth_token and not await token_manager.increment(auth_token):
-            return 429, auth_token
+        # NOTE: Disabled until January 1
+        # if auth_token and not await token_manager.increment(auth_token):
+        #     return 429, auth_token
         return 200, auth_token
 
     def get_example_file(self) -> dict:
