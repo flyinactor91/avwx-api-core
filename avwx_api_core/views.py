@@ -3,7 +3,7 @@ Core API view handlers
 """
 
 # stdlib
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
 from typing import Callable
@@ -70,7 +70,7 @@ class BaseView(Resource):
         """
         output = self.format_dict(output)
         if "error" in output and meta not in output:
-            output["timestamp"] = datetime.utcnow()
+            output["timestamp"] = datetime.now(tz=timezone.utc)
         if self.note and isinstance(output, dict):
             if meta not in output:
                 output[meta] = {}

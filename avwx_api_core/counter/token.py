@@ -5,7 +5,7 @@ Manages authentication tokens storage and counting
 # stdlib
 import time
 import asyncio as aio
-from datetime import datetime
+from datetime import datetime, timezone
 
 # module
 from avwx_api_core.counter.base import DelayedCounter
@@ -25,7 +25,7 @@ def date_key() -> str:
     """
     Returns the current date as a sub POSIX key
     """
-    return datetime.utcnow().strftime(r"%Y-%m-%d")
+    return datetime.now(tz=timezone.utc).strftime(r"%Y-%m-%d")
 
 
 class TokenCountCache(DelayedCounter):
@@ -38,7 +38,7 @@ class TokenCountCache(DelayedCounter):
         """
         Returns the current date as a sub POSIX key
         """
-        return datetime.utcnow().strftime(r"%Y-%m-%d")
+        return datetime.now(tz=timezone.utc).strftime(r"%Y-%m-%d")
 
     async def _fetch_token_data(self, token: str) -> dict:
         """

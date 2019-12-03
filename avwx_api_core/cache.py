@@ -4,7 +4,7 @@ MongoDB document cache management
 
 # stdlib
 from copy import copy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # module
 from avwx_api_core.util.handler import mongo_handler
@@ -52,7 +52,7 @@ class CacheManager:
         if not time:
             return True
         minutes = self.expires.get(table, DEFAULT_EXPIRES)
-        return datetime.utcnow() > time + timedelta(minutes=minutes)
+        return datetime.now(tz=timezone.utc) > time + timedelta(minutes=minutes)
 
     async def get(self, table: str, key: str, force: bool = False) -> {str: object}:
         """
@@ -81,7 +81,7 @@ class CacheManager:
         if self._app.mdb is None:
             return
         data = _replace_keys(copy(data), "$", "_$")
-        data["timestamp"] = datetime.utcnow()
+        data["timestamp"] = datetime.now(tz=timezone.utc)
         op = self._app.mdb.cache[table.lower()].update_one(
             {"_id": key}, {"$set": data}, upsert=True
         )
