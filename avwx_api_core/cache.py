@@ -51,6 +51,8 @@ class CacheManager:
         """
         if not time:
             return True
+        if time.tzinfo is None:
+            time = time.replace(tzinfo=timezone.utc)
         minutes = self.expires.get(table, DEFAULT_EXPIRES)
         return datetime.now(tz=timezone.utc) > time + timedelta(minutes=minutes)
 
