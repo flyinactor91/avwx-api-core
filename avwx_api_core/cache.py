@@ -23,7 +23,7 @@ def _replace_keys(data: dict, key: str, by_key: str) -> dict:
     """
     if data is None:
         return
-    for k, v in data.items():
+    for k, v in list(data.items()):
         if k == key:
             data[by_key] = data.pop(key)
         if isinstance(v, dict):

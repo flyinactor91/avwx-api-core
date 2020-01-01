@@ -153,9 +153,7 @@ class AuthView(BaseView):
                 return 403, auth_token
         # Increment returns False if rate limit exceeded
         if auth_token and not await token_manager.increment(auth_token):
-            # NOTE: Disabled until January 1
-            # return 429, auth_token
-            pass
+            return 429, auth_token
         return 200, auth_token
 
     def get_example_file(self) -> dict:
