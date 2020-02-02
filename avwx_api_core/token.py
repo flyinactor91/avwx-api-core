@@ -48,7 +48,7 @@ class TokenManager:
     def __init__(self, app: "Quart"):
         self._app = app
         self._counter = TokenCountCache(app)
-        self.active = app.db is not None
+        self.active = app.mdb is not None
 
     async def get(self, value: str) -> Token:
         """

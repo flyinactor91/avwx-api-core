@@ -12,65 +12,48 @@ from avwx_api_core.counter.base import DelayedCounter
 from avwx_api_core.util.handler import mongo_handler
 
 
-TOKEN_QUERY = """
-SELECT u.id AS user, u.active_token AS active, p.limit, p.name, p.type
-FROM public.user u
-JOIN public.plan p
-ON u.plan_id = p.id
-WHERE apitoken = $1;
-"""
-
-
-def date_key() -> str:
-    """
-    Returns the current date as a sub POSIX key
-    """
-    return datetime.now(tz=timezone.utc).strftime(r"%Y-%m-%d")
-
-
 class TokenCountCache(DelayedCounter):
     """
     Caches and counts user auth tokens
     """
 
     @staticmethod
-    def date_key() -> str:
+    def date_key() -> datetime:
         """
         Returns the current date as a sub POSIX key
         """
-        return datetime.now(tz=timezone.utc).strftime(r"%Y-%m-%d")
+        return datetime.now(tz=timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
 
     async def _fetch_token_data(self, token: str) -> dict:
         """
         Fetch token data from the cache or primary database
         """
-        data = await self._app.cache.get("token", token)
-        if data:
-            # Remove cache meta
-            del data["_id"]
-            del data["timestamp"]
-        else:
-            async with self._app.db.acquire() as conn:
-                async with conn.transaction():
-                    result = await conn.fetch(TOKEN_QUERY, token)
-            if not result:
-                return
-            data = dict(result[0])
-            await self._app.cache.update("token", token, data)
-        return data
+        if self._app.mdb is None:
+            return
+        op = self._app.mdb.account.user.find_one(
+            {"token.value": token},
+            {"token.active": 1, "plan.limit": 1, "plan.name": 1, "plan.type": 1},
+        )
+        data = await mongo_handler(op)
+        return {"user": data["_id"], **data["token"], **data["plan"]}
 
-    async def _fetch_token_usage(self, user: int) -> int:
+    async def _fetch_token_usage(self, user: "pymongo.ObjectId") -> int:
         """
         Fetch current token usage from counting table
         """
         if self._app.mdb is None:
             return
-        key = date_key()
-        op = self._app.mdb.counter.token.find_one({"_id": user}, {"_id": 0, key: 1})
+        key = self.date_key()
+        op = self._app.mdb.account.token.find_one(
+            {"user_id": user, "date": key}, {"_id": 0, "count": 1}
+        )
         data = await mongo_handler(op)
-        if not data:
+        try:
+            return data["count"]
+        except (IndexError, KeyError, TypeError):
             return 0
-        return data.get(key, 0)
 
     async def _worker(self):
         """
@@ -80,9 +63,12 @@ class TokenCountCache(DelayedCounter):
             async with self._queue.get() as value:
                 user, count = value
                 if self._app.mdb:
-                    await self._app.mdb.counter.token.update_one(
-                        {"_id": user}, {"$inc": {date_key(): count}}, upsert=True
+                    op = self._app.mdb.account.token.update_one(
+                        {"user_id": user, "date": self.date_key()},
+                        {"$inc": {"count": count}},
+                        upsert=True,
                     )
+                    await mongo_handler(op)
 
     # NOTE: The user triggering the update will not have the correct total.
     # This means that the cutoff time is at most 2 * self.interval

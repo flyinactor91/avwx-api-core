@@ -48,7 +48,7 @@ class BaseView(Resource):
         for k, v in output.items():
             if k in self._key_remv:
                 continue
-            elif k in self._key_repl:
+            if k in self._key_repl:
                 k = self._key_repl[k]
             if isinstance(v, dict):
                 v = self.format_dict(v)
