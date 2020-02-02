@@ -37,6 +37,8 @@ class TokenCountCache(DelayedCounter):
             {"token.active": 1, "plan.limit": 1, "plan.name": 1, "plan.type": 1},
         )
         data = await mongo_handler(op)
+        if not data:
+            return
         return {"user": data["_id"], **data["token"], **data["plan"]}
 
     async def _fetch_token_usage(self, user: "pymongo.ObjectId") -> int:
