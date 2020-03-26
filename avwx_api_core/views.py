@@ -33,8 +33,10 @@ class BaseView(Resource):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._key_repl = {}
-        self._key_remv = []
+        if self._key_repl is None:
+            self._key_repl = {}
+        if self._key_remv is None:
+            self._key_remv = []
 
     def format_dict(self, output: dict) -> dict:
         """
