@@ -150,7 +150,7 @@ class AuthView(BaseView):
         auth_token = await token_manager.get(auth_token)
         if auth_token is None or not auth_token.active:
             return 403, auth_token
-        if self.plan_types:
+        if self.plan_types and not auth_token.is_developer:
             if not auth_token.valid_type(self.plan_types):
                 return 403, auth_token
         # Increment returns False if rate limit exceeded

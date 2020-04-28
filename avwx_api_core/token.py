@@ -23,11 +23,18 @@ class Token:
     user: int
 
     @property
+    def is_developer(self) -> bool:
+        """
+        Returns if a token is an active development token
+        """
+        return self.active and self.type == "dev"
+
+    @property
     def is_paid(self) -> bool:
         """
         Returns if a token is an active paid token
         """
-        return self.active and self.type != "free"
+        return self.active and self.type not in ("free", "dev")
 
     def valid_type(self, types: [str]) -> bool:
         """
