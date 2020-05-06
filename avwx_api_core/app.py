@@ -3,7 +3,7 @@ API App Management
 """
 
 # stdlib
-from datetime import date
+from datetime import date, datetime
 
 # library
 from quart.json import JSONEncoder
@@ -18,8 +18,11 @@ class CustomJSONEncoder(JSONEncoder):
     # pylint: disable=method-hidden
     def default(self, obj):
         try:
+            if isinstance(obj, datetime):
+                new_obj = obj.replace(tzinfo=None)
+                return new_obj.isoformat() + "Z"
             if isinstance(obj, date):
-                return obj.isoformat() + "Z"
+                return obj.isoformat()
             iterable = iter(obj)
         except TypeError:
             pass
