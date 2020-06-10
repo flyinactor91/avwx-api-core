@@ -16,6 +16,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
     python_requires=">= 3.6",
     install_requires=[
@@ -24,10 +25,10 @@ setup(
         "dnspython~=1.16",
         "motor~=2.1",
         "pyyaml~=5.3",
-        "quart~=0.11",
+        "quart<0.12",
         "quart-openapi>=1.5",
         "voluptuous~=0.11",
     ],
     packages=find_packages(),
-    tests_require=["pytest-asyncio~=0.10"],
+    tests_require=["pytest-asyncio~=0.12"],
 )
