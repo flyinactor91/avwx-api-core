@@ -5,6 +5,10 @@ MongoDB document cache management
 # stdlib
 from copy import copy
 from datetime import datetime, timedelta, timezone
+from typing import Dict, Optional
+
+# library
+from quart import Quart
 
 # module
 from avwx_api_core.util.handler import mongo_handler
@@ -15,19 +19,19 @@ EXPIRES = {"token": 15}
 DEFAULT_EXPIRES = 2
 
 
-def _replace_keys(data: dict, key: str, by_key: str) -> dict:
+def _replace_keys(data: Optional[dict], key: str, by_key: str) -> Optional[dict]:
     """
     Replaces recursively the keys equal to 'key' by 'by_key'
 
     Some keys in the report data are '$' and this is not accepted by MongoDB
     """
     if data is None:
-        return
-    for k, v in list(data.items()):
-        if k == key:
+        return None
+    for d_key, d_val in list(data.items()):
+        if d_key == key:
             data[by_key] = data.pop(key)
-        if isinstance(v, dict):
-            data[k] = _replace_keys(v, key, by_key)
+        if isinstance(d_val, dict):
+            data[d_key] = _replace_keys(d_val, key, by_key)
     return data
 
 
@@ -36,10 +40,10 @@ class CacheManager:
     Handles expiring updates to/from the document cache
     """
 
-    _app: "Quart"
+    _app: Quart
     expires: dict
 
-    def __init__(self, app: "Quart", expires: dict = None):
+    def __init__(self, app: Quart, expires: dict = None):
         self._app = app
         self.expires = copy(EXPIRES)
         if expires:
@@ -56,7 +60,7 @@ class CacheManager:
         minutes = self.expires.get(table, DEFAULT_EXPIRES)
         return datetime.now(tz=timezone.utc) > time + timedelta(minutes=minutes)
 
-    async def get(self, table: str, key: str, force: bool = False) -> {str: object}:
+    async def get(self, table: str, key: str, force: bool = False) -> Dict[str, object]:
         """
         Returns the current cached data for a report type and station or None
 
@@ -65,8 +69,8 @@ class CacheManager:
         """
         if self._app.mdb is None:
             return
-        op = self._app.mdb.cache[table.lower()].find_one({"_id": key})
-        data = await mongo_handler(op)
+        search = self._app.mdb.cache[table.lower()].find_one({"_id": key})
+        data = await mongo_handler(search)
         data = _replace_keys(data, "_$", "$")
         if force:
             return data
@@ -76,7 +80,7 @@ class CacheManager:
             return data
         return
 
-    async def update(self, table: str, key: str, data: {str: object}):
+    async def update(self, table: str, key: str, data: Dict[str, object]):
         """
         Update the cache
         """
@@ -84,8 +88,8 @@ class CacheManager:
             return
         data = _replace_keys(copy(data), "$", "_$")
         data["timestamp"] = datetime.now(tz=timezone.utc)
-        op = self._app.mdb.cache[table.lower()].update_one(
+        update = self._app.mdb.cache[table.lower()].update_one(
             {"_id": key}, {"$set": data}, upsert=True
         )
-        await mongo_handler(op)
+        await mongo_handler(update)
         return

@@ -6,6 +6,9 @@ Local counter to aggregate calls to databases
 import time
 import asyncio as aio
 
+# library
+from quart import Quart
+
 # module
 from avwx_api_core.util.queue import Queue
 
@@ -15,14 +18,14 @@ class DelayedCounter:
     Manages counts to limit calls to database
     """
 
-    _app: "Quart"
+    _app: Quart
     _data: dict
     _queue: Queue
     update_at: int
     interval: int  # seconds
     locked: bool = False
 
-    def __init__(self, app: "Quart", interval: int = 60):
+    def __init__(self, app: Quart, interval: int = 60):
         self._app = app
         self._queue = Queue(self)
         self._data = {}

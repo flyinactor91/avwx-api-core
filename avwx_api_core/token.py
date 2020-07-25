@@ -4,6 +4,10 @@ Token authentication management
 
 # stdlib
 from dataclasses import dataclass
+from typing import List, Union
+
+# library
+from quart import Quart
 
 # module
 from avwx_api_core.counter.token import TokenCountCache
@@ -36,7 +40,7 @@ class Token:
         """
         return self.active and self.type not in ("free", "dev")
 
-    def valid_type(self, types: [str]) -> bool:
+    def valid_type(self, types: List[str]) -> bool:
         """
         Returns True if an active token matches one of the plan types
         """
@@ -48,11 +52,11 @@ class TokenManager:
     Handles token fetch and counting
     """
 
-    _app: "Quart"
+    _app: Quart
     _counter = TokenCountCache
     active: bool
 
-    def __init__(self, app: "Quart"):
+    def __init__(self, app: Quart):
         self._app = app
         self._counter = TokenCountCache(app)
         self.active = app.mdb is not None
@@ -64,7 +68,7 @@ class TokenManager:
         data = await self._counter.get(value)
         return Token(value=value, **data) if data else None
 
-    async def increment(self, token: "str/Token") -> bool:
+    async def increment(self, token: Union[str, Token]) -> bool:
         """
         Increment a token count by Token object or raw value
         """

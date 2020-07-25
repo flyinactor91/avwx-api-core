@@ -4,12 +4,13 @@ Remote call handlers
 
 # stdlib
 import asyncio as aio
+from typing import Coroutine
 
 # library
 from pymongo.errors import AutoReconnect, OperationFailure
 
 
-async def mongo_handler(operation: "coroutine") -> object:
+async def mongo_handler(operation: Coroutine) -> object:
     """
     Error handling around the Mongo client connection
     """

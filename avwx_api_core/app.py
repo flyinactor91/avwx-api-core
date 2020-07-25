@@ -6,6 +6,7 @@ API App Management
 from datetime import date, datetime
 
 # library
+from motor.motor_asyncio import AsyncIOMotorClient
 from quart.json import JSONEncoder
 from quart_openapi import Pint
 
@@ -15,7 +16,7 @@ class CustomJSONEncoder(JSONEncoder):
     Customize the JSON date format
     """
 
-    # pylint: disable=method-hidden
+    # pylint: disable=arguments-differ
     def default(self, obj):
         try:
             if isinstance(obj, datetime):
@@ -60,12 +61,7 @@ def create_app(name: str, mongo_uri: str = None) -> Pint:
 
     @app.before_serving
     async def _startup():
-        if mongo_uri:
-            from motor.motor_asyncio import AsyncIOMotorClient
-
-            app.mdb = AsyncIOMotorClient(mongo_uri)
-        else:
-            app.mdb = None
+        app.mdb = AsyncIOMotorClient(mongo_uri) if mongo_uri else None
 
     app.json_encoder = CustomJSONEncoder
     app.after_request(add_cors)

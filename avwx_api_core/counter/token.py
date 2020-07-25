@@ -7,6 +7,9 @@ import time
 import asyncio as aio
 from datetime import datetime, timezone
 
+# library
+from bson.objectid import ObjectId
+
 # module
 from avwx_api_core.counter.base import DelayedCounter
 from avwx_api_core.util.handler import mongo_handler
@@ -32,26 +35,26 @@ class TokenCountCache(DelayedCounter):
         """
         if self._app.mdb is None:
             return
-        op = self._app.mdb.account.user.find_one(
+        search = self._app.mdb.account.user.find_one(
             {"token.value": token},
             {"token.active": 1, "plan.limit": 1, "plan.name": 1, "plan.type": 1},
         )
-        data = await mongo_handler(op)
+        data = await mongo_handler(search)
         if not data:
             return
         return {"user": data["_id"], **data["token"], **data["plan"]}
 
-    async def _fetch_token_usage(self, user: "pymongo.ObjectId") -> int:
+    async def _fetch_token_usage(self, user: ObjectId) -> int:
         """
         Fetch current token usage from counting table
         """
         if self._app.mdb is None:
             return
         key = self.date_key()
-        op = self._app.mdb.account.token.find_one(
+        search = self._app.mdb.account.token.find_one(
             {"user_id": user, "date": key}, {"_id": 0, "count": 1}
         )
-        data = await mongo_handler(op)
+        data = await mongo_handler(search)
         try:
             return data["count"]
         except (IndexError, KeyError, TypeError):
@@ -65,12 +68,12 @@ class TokenCountCache(DelayedCounter):
             async with self._queue.get() as value:
                 user, count = value
                 if self._app.mdb:
-                    op = self._app.mdb.account.token.update_one(
+                    update = self._app.mdb.account.token.update_one(
                         {"user_id": user, "date": self.date_key()},
                         {"$inc": {"count": count}},
                         upsert=True,
                     )
-                    await mongo_handler(op)
+                    await mongo_handler(update)
 
     # NOTE: The user triggering the update will not have the correct total.
     # This means that the cutoff time is at most 2 * self.interval
@@ -111,6 +114,7 @@ class TokenCountCache(DelayedCounter):
             self._data[token] = {"data": data, "count": 0, "total": total}
             return data
 
+    # pylint: disable=arguments-differ
     async def add(self, token: str) -> bool:
         """
         Increment a token usage counter

@@ -5,7 +5,7 @@ Task queue management
 # stdlib
 import asyncio as aio
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Coroutine, List
 
 
 class Queue:
@@ -14,7 +14,7 @@ class Queue:
     """
 
     _queue: aio.Queue
-    _workers: [aio.coroutine]
+    _workers: List[Coroutine]
 
     def __init__(self, worker_obj: object, count: int = 3):
         self._queue = aio.Queue()

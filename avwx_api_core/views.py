@@ -2,21 +2,24 @@
 Core API view handlers
 """
 
+# pylint: disable=too-many-arguments
+
 # stdlib
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
-from typing import Callable
+from typing import Callable, List, Tuple
 
 # library
 import yaml
 from dicttoxml import dicttoxml as fxml
-from quart import Response, jsonify, request
+from quart import Quart, Response, jsonify, request
 from quart_openapi import Resource
 from voluptuous import Invalid, MultipleInvalid
 
 # module
 from avwx_api_core import validate
+from avwx_api_core.token import Token, TokenManager
 
 
 class BaseView(Resource):
@@ -29,7 +32,7 @@ class BaseView(Resource):
     # Replace the key's name in the final response
     _key_repl: dict = None
     # Remove the following keys from the final response
-    _key_remv: [str] = None
+    _key_remv: List[str] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -47,21 +50,22 @@ class BaseView(Resource):
         if not isinstance(output, dict):
             return output
         resp = {}
-        for k, v in output.items():
-            if k in self._key_remv:
+        for key, val in output.items():
+            if key in self._key_remv:
                 continue
-            if k in self._key_repl:
-                k = self._key_repl[k]
-            if isinstance(v, dict):
-                v = self.format_dict(v)
-            elif isinstance(v, list):
-                v = [self.format_dict(item) for item in v]
-            resp[k] = v
+            if key in self._key_repl:
+                key = self._key_repl[key]
+            if isinstance(val, dict):
+                val = self.format_dict(val)
+            elif isinstance(val, list):
+                val = [self.format_dict(item) for item in val]
+            resp[key] = val
         return resp
 
     def make_response(
         self,
         output: dict,
+        # pylint: disable=redefined-builtin
         format: str = "json",
         code: int = 200,
         meta: str = "meta",
@@ -90,7 +94,7 @@ class BaseView(Resource):
         return resp
 
 
-def make_token_check(app: "Quart") -> Callable:
+def make_token_check(app: Quart) -> Callable:
     """
     Pass the core app to allow access to the token manager
     """
@@ -104,7 +108,8 @@ def make_token_check(app: "Quart") -> Callable:
         async def wrapper(self, *args, **kwargs):
             code, token = await self.validate_token(app.token)
             if code != 200:
-                data = self.make_example_response(code, token)
+                report_type = kwargs.get("report_type", self.report_type)
+                data = self.make_example_response(code, report_type, token)
                 return self.make_response(data, code=code)
             return await func(self, *args, **kwargs)
 
@@ -132,9 +137,9 @@ class AuthView(BaseView):
 
     # Whitelist of token plan types to access this endpoint
     # If None, all tokens are allowed
-    plan_types: (str,) = None
+    plan_types: Tuple[str] = None
 
-    async def validate_token(self, token_manager: "TokenManager") -> (int, "Token"):
+    async def validate_token(self, token_manager: TokenManager) -> Tuple[int, Token]:
         """
         Validates thats an authorization token exists and is active
 
@@ -158,17 +163,20 @@ class AuthView(BaseView):
             return 429, auth_token
         return 200, auth_token
 
-    def get_example_file(self) -> dict:
+    # pylint: disable=unused-argument,no-self-use
+    def get_example_file(self, report_type: str) -> dict:
         """
         Load the example payload for the endpoint
         """
         return {}
 
-    def make_example_response(self, error_code: int, token: "Token") -> dict:
+    def make_example_response(
+        self, error_code: int, report_type: str, token: "Token"
+    ) -> dict:
         """
         Returns an example payload when validation fails
         """
-        data = self.get_example_file()
+        data = self.get_example_file(report_type)
         msg = VALIDATION_ERROR_MESSAGES[error_code]
         # Special handling for 403 errors
         if error_code == 403:
