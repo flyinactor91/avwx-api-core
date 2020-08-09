@@ -4,9 +4,10 @@ Token authentication management
 
 # stdlib
 from dataclasses import dataclass
-from typing import List, Union
+from typing import Tuple, Union
 
 # library
+from bson import ObjectId
 from quart import Quart
 
 # module
@@ -23,8 +24,8 @@ class Token:
     limit: int
     name: str
     type: str
+    user: ObjectId
     value: str
-    user: int
 
     @property
     def is_developer(self) -> bool:
@@ -40,7 +41,7 @@ class Token:
         """
         return self.active and self.type not in ("free", "dev")
 
-    def valid_type(self, types: List[str]) -> bool:
+    def valid_type(self, types: Tuple[str]) -> bool:
         """
         Returns True if an active token matches one of the plan types
         """
@@ -59,14 +60,16 @@ class TokenManager:
     def __init__(self, app: Quart):
         self._app = app
         self._counter = TokenCountCache(app)
+        self._dev = TokenCountCache(app)
         self.active = app.mdb is not None
 
     async def get(self, value: str) -> Token:
         """
         Get a token object by raw value
         """
-        data = await self._counter.get(value)
-        return Token(value=value, **data) if data else None
+        counter = self._dev if value.startswith("dev-") else self._counter
+        data = await counter.get(value)
+        return Token(**data) if data else None
 
     async def increment(self, token: Union[str, Token]) -> bool:
         """
@@ -74,4 +77,5 @@ class TokenManager:
         """
         if isinstance(token, Token):
             token = token.value
-        return await self._counter.add(token)
+        counter = self._dev if token.startswith("dev-") else self._counter
+        return await counter.add(token)

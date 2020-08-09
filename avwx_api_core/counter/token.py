@@ -6,19 +6,28 @@ Manages authentication tokens storage and counting
 import time
 import asyncio as aio
 from datetime import datetime, timezone
+from typing import Dict, List, Optional
 
 # library
 from bson.objectid import ObjectId
+from quart import Quart
 
 # module
 from avwx_api_core.counter.base import DelayedCounter
 from avwx_api_core.util.handler import mongo_handler
 
 
+DEV_TOKEN_LIMIT = 4000
+
+
 class TokenCountCache(DelayedCounter):
     """
     Caches and counts user auth tokens
     """
+
+    def __init__(self, app: Quart, interval: int = 60):
+        super().__init__(app, interval)
+        self._user = {}
 
     @staticmethod
     def date_key() -> datetime:
@@ -31,34 +40,64 @@ class TokenCountCache(DelayedCounter):
 
     async def _fetch_token_data(self, token: str) -> dict:
         """
-        Fetch token data from the cache or primary database
+        Fetch token data from database
         """
         if self._app.mdb is None:
             return
         search = self._app.mdb.account.user.find_one(
-            {"token.value": token},
-            {"token.active": 1, "plan.limit": 1, "plan.name": 1, "plan.type": 1},
+            {"tokens.value": token},
+            {
+                "tokens._id": 1,
+                "tokens.value": 1,
+                "tokens.active": 1,
+                "plan.limit": 1,
+                "plan.name": 1,
+                "plan.type": 1,
+            },
         )
         data = await mongo_handler(search)
         if not data:
             return
-        return {"user": data["_id"], **data["token"], **data["plan"]}
+        is_dev = token.startswith("dev-")
+        tokens = [t for t in data["tokens"] if is_dev == t["value"].startswith("dev-")]
+        ret = {"user": data["_id"], "tokens": tokens, **data["plan"]}
+        if is_dev:
+            ret["limit"] = DEV_TOKEN_LIMIT
+        return ret
 
-    async def _fetch_token_usage(self, user: ObjectId) -> int:
+    async def _fetch_token_usage(self, user: ObjectId) -> Dict[ObjectId, int]:
         """
         Fetch current token usage from counting table
         """
         if self._app.mdb is None:
             return
         key = self.date_key()
-        search = self._app.mdb.account.token.find_one(
-            {"user_id": user, "date": key}, {"_id": 0, "count": 1}
+        search = self._app.mdb.account.token.find(
+            {"user_id": user, "date": key}, {"_id": 0, "token_id": 1, "count": 1}
         )
-        data = await mongo_handler(search)
-        try:
-            return data["count"]
-        except (IndexError, KeyError, TypeError):
-            return 0
+        return {t["token_id"]: t["count"] async for t in search}
+
+    async def _set_usage(self, user_id: ObjectId, tokens: List[dict]):
+        """
+        Set the user's existing token count
+        """
+        counts = await self._fetch_token_usage(user_id)
+        total = 0
+        for token in tokens:
+            print(token)
+            total += counts.get(token["_id"], 0)
+        self._user[user_id] = total
+
+    def _set_tokens(self, data: List[dict]):
+        """
+        Set token data in the counter
+        """
+        tokens = data.pop("tokens")
+        for item in tokens:
+            key = item["value"]
+            token_id = item.pop("_id")
+            item.update(data)
+            self._data[key] = {"data": item, "count": 0, "id": token_id}
 
     async def _worker(self):
         """
@@ -66,14 +105,24 @@ class TokenCountCache(DelayedCounter):
         """
         while True:
             async with self._queue.get() as value:
-                user, count = value
+                user, token, count = value
                 if self._app.mdb:
                     update = self._app.mdb.account.token.update_one(
-                        {"user_id": user, "date": self.date_key()},
+                        {"user_id": user, "token_id": token, "date": self.date_key()},
                         {"$inc": {"count": count}},
                         upsert=True,
                     )
                     await mongo_handler(update)
+
+    def gather_data(self) -> dict:
+        """
+        Returns existing data while locking to prevent missed values
+        """
+        self.locked = True
+        data = self._data
+        self._data, self._user = {}, {}
+        self.locked = False
+        return data
 
     # NOTE: The user triggering the update will not have the correct total.
     # This means that the cutoff time is at most 2 * self.interval
@@ -85,21 +134,21 @@ class TokenCountCache(DelayedCounter):
         for item in to_update.values():
             if not item:
                 continue
-            self._queue.add((item["data"]["user"], item["count"]))
+            count = item["count"]
+            if not count:
+                continue
+            self._queue.add((item["data"]["user"], item["id"], count))
         self.update_at = time.time() + self.interval
 
-    async def get(self, token: str) -> dict:
+    async def get(self, token: str) -> Optional[dict]:
         """
         Fetch data for a token. Must be called before increment
         """
         await self._pre_add()
         try:
             # Wait for busy thread to add data if not finished fetching
-            item = self._data[token]
-            while item is None:
+            while self._data[token] is None:
                 await aio.sleep(0.0001)
-                item = self._data[token]
-            return item["data"]
         except KeyError:
             # Set None to indicate data fetch in progress
             self._data[token] = None
@@ -109,10 +158,10 @@ class TokenCountCache(DelayedCounter):
                     del self._data[token]
                 except KeyError:
                     pass
-                return
-            total = await self._fetch_token_usage(data["user"])
-            self._data[token] = {"data": data, "count": 0, "total": total}
-            return data
+                return None
+            await self._set_usage(data["user"], data["tokens"])
+            self._set_tokens(data)
+        return self._data[token]["data"]
 
     # pylint: disable=arguments-differ
     async def add(self, token: str) -> bool:
@@ -127,6 +176,7 @@ class TokenCountCache(DelayedCounter):
             limit = item["data"]["limit"]
             if limit is None:
                 return True
-            return limit >= item["total"] + item["count"]
+            total = self._user[item["data"]["user"]]
+            return limit >= total + item["count"]
         except KeyError:
             return False
