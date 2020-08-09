@@ -22,7 +22,7 @@ setup(
     install_requires=[
         'dataclasses>=0.7;python_version<"3.7"',
         "dicttoxml~=1.7",
-        "dnspython~=1.16",
+        "dnspython~=2.0",
         "motor~=2.1",
         "pyyaml~=5.3",
         "quart>=0.13",
@@ -30,5 +30,5 @@ setup(
         "voluptuous~=0.11",
     ],
     packages=find_packages(),
-    tests_require=["pytest-asyncio~=0.12"],
+    tests_require=["pytest-asyncio~=0.14"],
 )
