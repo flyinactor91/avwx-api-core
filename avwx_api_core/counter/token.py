@@ -84,7 +84,6 @@ class TokenCountCache(DelayedCounter):
         counts = await self._fetch_token_usage(user_id)
         total = 0
         for token in tokens:
-            print(token)
             total += counts.get(token["_id"], 0)
         self._user[user_id] = total
 
