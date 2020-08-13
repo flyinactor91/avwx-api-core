@@ -108,7 +108,14 @@ def make_token_check(app: Quart) -> Callable:
         async def wrapper(self, *args, **kwargs):
             code, token = await self.validate_token(app.token)
             if code != 200:
-                report_type = kwargs.get("report_type", self.report_type)
+                # If given a Param object
+                for item in args:
+                    if hasattr(item, "report_type"):
+                        report_type = item.report_type
+                        break
+                # Other pulled from url or class default
+                else:
+                    report_type = kwargs.get("report_type", self.report_type)
                 data = self.make_example_response(code, report_type, token)
                 return self.make_response(data, code=code)
             return await func(self, *args, **kwargs)
@@ -123,8 +130,6 @@ VALIDATION_ERROR_MESSAGES = {
     403: "Your auth token ",
     429: "Your auth token has hit it's daily rate limit. Considder upgrading your plan",
 }
-
-EXAMPLE_PATH = Path(__file__).parent / "examples"
 
 
 class AuthView(BaseView):
