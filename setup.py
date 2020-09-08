@@ -23,7 +23,7 @@ setup(
         'dataclasses>=0.7;python_version<"3.7"',
         "dicttoxml~=1.7",
         "dnspython~=2.0",
-        "motor~=2.1",
+        "motor~=2.2",
         "pyyaml~=5.3",
         "quart>=0.13",
         "quart-openapi>=1.6",

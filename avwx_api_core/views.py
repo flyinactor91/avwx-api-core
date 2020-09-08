@@ -7,7 +7,6 @@ Core API view handlers
 # stdlib
 from datetime import datetime, timezone
 from functools import wraps
-from pathlib import Path
 from typing import Callable, List, Tuple
 
 # library
