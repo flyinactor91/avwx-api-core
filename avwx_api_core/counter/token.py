@@ -5,6 +5,7 @@ Manages authentication tokens storage and counting
 # stdlib
 import time
 import asyncio as aio
+from contextlib import suppress
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
@@ -153,10 +154,8 @@ class TokenCountCache(DelayedCounter):
             self._data[token] = None
             data = await self._fetch_token_data(token)
             if not data:
-                try:
+                with suppress(KeyError):
                     del self._data[token]
-                except KeyError:
-                    pass
                 return None
             await self._set_usage(data["user"], data["tokens"])
             self._set_tokens(data)
