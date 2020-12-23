@@ -9,9 +9,7 @@ from typing import Any, Coroutine, List
 
 
 class Queue:
-    """
-    Asynchronous task queue manager
-    """
+    """Asynchronous task queue manager"""
 
     _queue: aio.Queue
     _workers: List[Coroutine]
@@ -21,24 +19,18 @@ class Queue:
         self._workers = [aio.create_task(worker_obj._worker()) for _ in range(count)]
 
     def add(self, value: Any):
-        """
-        Add a value to the queue
-        """
+        """Add a value to the queue"""
         self._queue.put_nowait(value)
 
     @asynccontextmanager
     async def get(self) -> Any:
-        """
-        Get a value to handle. Used in a 'with' statement
-        """
+        """Get a value to handle. Used in a 'with' statement"""
         value = await self._queue.get()
         yield value
         self._queue.task_done()
 
     async def clean(self, wait: bool = True):
-        """
-        Clean the queue and wait until all workers are finished
-        """
+        """Clean the queue and wait until all workers are finished"""
         if wait:
             while not self._queue.empty():
                 await aio.sleep(0.01)

@@ -20,8 +20,7 @@ DEFAULT_EXPIRES = 2
 
 
 def _replace_keys(data: Optional[dict], key: str, by_key: str) -> Optional[dict]:
-    """
-    Replaces recursively the keys equal to 'key' by 'by_key'
+    """Replaces recursively the keys equal to 'key' by 'by_key'
 
     Some keys in the report data are '$' and this is not accepted by MongoDB
     """
@@ -36,9 +35,7 @@ def _replace_keys(data: Optional[dict], key: str, by_key: str) -> Optional[dict]
 
 
 class CacheManager:
-    """
-    Handles expiring updates to/from the document cache
-    """
+    """Handles expiring updates to/from the document cache"""
 
     _app: Quart
     expires: dict
@@ -50,9 +47,7 @@ class CacheManager:
             self.expires.update(expires)
 
     def has_expired(self, time: datetime, table: str) -> bool:
-        """
-        Returns True if a datetime is older than the number of minutes given
-        """
+        """Returns True if a datetime is older than the number of minutes given"""
         if not time:
             return True
         if time.tzinfo is None:
@@ -61,8 +56,7 @@ class CacheManager:
         return datetime.now(tz=timezone.utc) > time + timedelta(minutes=minutes)
 
     async def get(self, table: str, key: str, force: bool = False) -> Dict[str, object]:
-        """
-        Returns the current cached data for a report type and station or None
+        """Returns the current cached data for a report type and station or None
 
         By default, will only return if the cache timestamp has not been exceeded
         Can force the cache to return if force is True
@@ -81,9 +75,7 @@ class CacheManager:
         return
 
     async def update(self, table: str, key: str, data: Dict[str, object]):
-        """
-        Update the cache
-        """
+        """Update the cache"""
         if self._app.mdb is None:
             return
         data = _replace_keys(copy(data), "$", "_$")

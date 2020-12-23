@@ -22,9 +22,7 @@ from avwx_api_core.token import Token, TokenManager
 
 
 class BaseView(Resource):
-    """
-    Base API Endpoint
-    """
+    """Base API Endpoint"""
 
     note: str = None
 
@@ -41,8 +39,7 @@ class BaseView(Resource):
             self._key_remv = []
 
     def format_dict(self, output: dict) -> dict:
-        """
-        Formats a dict by recursively replacing and removing key
+        """Formats a dict by recursively replacing and removing key
 
         Returns the item as-is if not a dict
         """
@@ -70,9 +67,7 @@ class BaseView(Resource):
         meta: str = "meta",
         root: str = "AVWX",
     ) -> Response:
-        """
-        Returns the output string based on format param
-        """
+        """Returns the output string based on format param"""
         output = self.format_dict(output)
         if "error" in output and meta not in output:
             output["timestamp"] = datetime.now(tz=timezone.utc)
@@ -94,14 +89,10 @@ class BaseView(Resource):
 
 
 def make_token_check(app: Quart) -> Callable:
-    """
-    Pass the core app to allow access to the token manager
-    """
+    """Pass the core app to allow access to the token manager"""
 
     def token_check(func: Callable) -> Callable:
-        """
-        Checks token presense and validity for the endpoint
-        """
+        """Checks token presense and validity for the endpoint"""
 
         @wraps(func)
         async def wrapper(self, *args, **kwargs):
@@ -132,9 +123,7 @@ VALIDATION_ERROR_MESSAGES = {
 
 
 class AuthView(BaseView):
-    """
-    Views requiring token authentication
-    """
+    """Views requiring token authentication"""
 
     # Filename of the sample response when token validation fails
     example: str = None
@@ -144,8 +133,7 @@ class AuthView(BaseView):
     plan_types: Tuple[str] = None
 
     async def validate_token(self, token_manager: TokenManager) -> Tuple[int, Token]:
-        """
-        Validates thats an authorization token exists and is active
+        """Validates thats an authorization token exists and is active
 
         Returns the response code and Token object
         """
@@ -169,17 +157,13 @@ class AuthView(BaseView):
 
     # pylint: disable=unused-argument,no-self-use
     def get_example_file(self, report_type: str) -> dict:
-        """
-        Load the example payload for the endpoint
-        """
+        """Load the example payload for the endpoint"""
         return {}
 
     def make_example_response(
-        self, error_code: int, report_type: str, token: "Token"
+        self, error_code: int, report_type: str, token: Token
     ) -> dict:
-        """
-        Returns an example payload when validation fails
-        """
+        """Returns an example payload when validation fails"""
         data = self.get_example_file(report_type)
         msg = VALIDATION_ERROR_MESSAGES[error_code]
         # Special handling for 403 errors

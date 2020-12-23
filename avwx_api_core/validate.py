@@ -13,15 +13,11 @@ from voluptuous import All, Invalid, Length
 
 
 def MatchesRE(name: str, pattern: str) -> Callable:
-    """
-    Returns a validation function that checks if a string matches a regex pattern
-    """
+    """Returns a validation function that checks if a string matches a regex pattern"""
     expr = re.compile(pattern)
 
     def mre(txt: str) -> str:
-        """
-        Raises an exception if a string doesn't match the required format
-        """
+        """Raises an exception if a string doesn't match the required format"""
         if expr.fullmatch(txt) is None:
             raise Invalid(f"'{txt}' is not a valid {name}")
         return txt

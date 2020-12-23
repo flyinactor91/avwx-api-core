@@ -12,9 +12,7 @@ from quart_openapi import Pint
 
 
 class CustomJSONEncoder(JSONEncoder):
-    """
-    Customize the JSON date format
-    """
+    """Customize the JSON date format"""
 
     # pylint: disable=arguments-differ
     def default(self, obj):
@@ -36,8 +34,7 @@ CORS_HEADERS = ["Authorization", "Content-Type"]
 
 
 def add_cors(response):
-    """
-    Add missing CORS headers
+    """Add missing CORS headers
 
     Fixes CORS bug where headers are not included in OPTIONS
     """
@@ -54,9 +51,7 @@ def add_cors(response):
 
 
 def create_app(name: str, mongo_uri: str = None) -> Pint:
-    """
-    Create the core API app. Supply URIs as necessary
-    """
+    """Create the core API app. Supply URIs as necessary"""
     app = Pint(name)
 
     @app.before_serving
