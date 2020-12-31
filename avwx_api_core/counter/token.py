@@ -49,7 +49,6 @@ class TokenCountCache(DelayedCounter):
                 "plan.limit": 1,
                 "plan.name": 1,
                 "plan.type": 1,
-                "plan.overage": 1,
                 "allow_overage": 1,
             },
         )
@@ -60,8 +59,8 @@ class TokenCountCache(DelayedCounter):
         tokens = [t for t in data["tokens"] if is_dev == t["value"].startswith("dev-")]
         ret = {
             "user": data["_id"],
-            "user_overage": data.get("allow_overage", False),
             "tokens": tokens,
+            "overage": data.get("allow_overage", False),
             **data["plan"],
         }
         if is_dev:
@@ -187,7 +186,7 @@ class TokenCountCache(DelayedCounter):
             total, current = self._user[data["user"]], item["count"]
             if limit >= total + current:
                 return True
-            if data.get("overage") and data.get("user_overage"):
+            if data.get("overage"):
                 self._data[token]["overage"] += 1
                 return True
             return False
