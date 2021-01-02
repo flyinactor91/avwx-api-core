@@ -117,7 +117,7 @@ def make_token_check(app: Quart) -> Callable:
 
 VALIDATION_ERROR_MESSAGES = {
     401: 'You are missing the "Authorization" header or "token" parameter',
-    403: "Your auth token ",
+    403: "Your auth token is not allowed to access this resource",
     429: "Your auth token has hit it's daily rate limit. Considder upgrading your plan",
 }
 

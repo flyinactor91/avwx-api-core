@@ -23,7 +23,7 @@ setup(
         "dnspython~=2.0",
         "motor~=2.3",
         "pyyaml~=5.3",
-        "quart>=0.13",
+        "quart>=0.14",
         "quart-openapi>=1.6",
         "voluptuous~=0.12",
     ],
