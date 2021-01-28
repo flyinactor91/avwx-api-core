@@ -20,9 +20,9 @@ setup(
     python_requires=">= 3.7",
     install_requires=[
         "dicttoxml~=1.7",
-        "dnspython~=2.0",
+        "dnspython~=2.1",
         "motor~=2.3",
-        "pyyaml~=5.3",
+        "pyyaml~=5.4",
         "quart>=0.14",
         "quart-openapi>=1.6",
         "voluptuous~=0.12",
