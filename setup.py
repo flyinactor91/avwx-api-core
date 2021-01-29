@@ -24,7 +24,7 @@ setup(
         "motor~=2.3",
         "pyyaml~=5.4",
         "quart>=0.14",
-        "quart-openapi>=1.6",
+        "quart-openapi>=1.7.1",
         "voluptuous~=0.12",
     ],
     packages=find_packages(),
