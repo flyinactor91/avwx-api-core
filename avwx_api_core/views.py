@@ -108,6 +108,8 @@ def make_token_check(app: Quart) -> Callable:
                     report_type = kwargs.get("report_type", self.report_type)
                 data = self.make_example_response(code, report_type, token)
                 return self.make_response(data, code=code)
+            if self.include_token:
+                kwargs["token"] = token
             return await func(self, *args, **kwargs)
 
         return wrapper
@@ -131,6 +133,9 @@ class AuthView(BaseView):
     # Whitelist of token plan types to access this endpoint
     # If None, all tokens are allowed
     plan_types: Tuple[str] = None
+
+    # If True, add "token: Token" to route kwargs
+    include_token: bool = False
 
     async def validate_token(self, token_manager: TokenManager) -> Tuple[int, Token]:
         """Validates thats an authorization token exists and is active
