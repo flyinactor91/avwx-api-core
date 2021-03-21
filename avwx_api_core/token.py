@@ -6,7 +6,7 @@ Token authentication management
 
 # stdlib
 from dataclasses import dataclass
-from typing import Tuple, Union
+from typing import Union
 
 # library
 from bson import ObjectId
@@ -44,7 +44,7 @@ class Token:
         """Returns if a token is an active paid token"""
         return self.active and self.type not in ("free", "dev")
 
-    def valid_type(self, types: Tuple[str]) -> bool:
+    def valid_type(self, types: tuple[str]) -> bool:
         """Returns True if an active token matches one of the plan types"""
         return self.active and self.type in types
 

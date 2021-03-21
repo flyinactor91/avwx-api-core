@@ -7,7 +7,7 @@ import time
 import asyncio as aio
 from contextlib import suppress
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 # library
 from bson.objectid import ObjectId
@@ -67,7 +67,7 @@ class TokenCountCache(DelayedCounter):
             ret["limit"] = DEV_TOKEN_LIMIT
         return ret
 
-    async def _fetch_token_usage(self, user: ObjectId) -> Dict[ObjectId, int]:
+    async def _fetch_token_usage(self, user: ObjectId) -> dict[ObjectId, int]:
         """Fetch current token usage from counting table"""
         if self._app.mdb is None:
             return
@@ -77,7 +77,7 @@ class TokenCountCache(DelayedCounter):
         )
         return {t["token_id"]: t["count"] async for t in search}
 
-    async def _set_usage(self, user_id: ObjectId, tokens: List[dict]):
+    async def _set_usage(self, user_id: ObjectId, tokens: list[dict]):
         """Set the user's existing token count"""
         counts = await self._fetch_token_usage(user_id)
         total = 0
@@ -85,7 +85,7 @@ class TokenCountCache(DelayedCounter):
             total += counts.get(token["_id"], 0)
         self._user[user_id] = total
 
-    def _set_tokens(self, data: List[dict]):
+    def _set_tokens(self, data: list[dict]):
         """Set token data in the counter"""
         tokens = data.pop("tokens")
         for item in tokens:
@@ -103,7 +103,7 @@ class TokenCountCache(DelayedCounter):
         return UpdateOne(match, counts, upsert=True)
 
     @staticmethod
-    def _update_timestamps(match: dict, overage: int) -> List[UpdateOne]:
+    def _update_timestamps(match: dict, overage: int) -> list[UpdateOne]:
         """Create timestamp usage operations"""
         now = datetime.now(tz=timezone.utc)
         updates = [UpdateOne(match, {"$set": {"updated": now}}, upsert=True)]
@@ -112,7 +112,7 @@ class TokenCountCache(DelayedCounter):
             updates.append(UpdateOne(excluding, {"$set": {"overage_started": now}}))
         return updates
 
-    async def _process_queue_value(self, value: Tuple[ObjectId, str, int, int]):
+    async def _process_queue_value(self, value: tuple[ObjectId, str, int, int]):
         """Updates token counts and timestamps from queued value"""
         user, token, count, overage = value
         match = {"user_id": user, "token_id": token, "date": self.date_key()}

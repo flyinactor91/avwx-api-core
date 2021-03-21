@@ -5,7 +5,7 @@ MongoDB document cache management
 # stdlib
 from copy import copy
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional
+from typing import Optional
 
 # library
 from quart import Quart
@@ -55,7 +55,7 @@ class CacheManager:
         minutes = self.expires.get(table, DEFAULT_EXPIRES)
         return datetime.now(tz=timezone.utc) > time + timedelta(minutes=minutes)
 
-    async def get(self, table: str, key: str, force: bool = False) -> Dict[str, object]:
+    async def get(self, table: str, key: str, force: bool = False) -> dict[str, object]:
         """Returns the current cached data for a report type and station or None
 
         By default, will only return if the cache timestamp has not been exceeded
@@ -74,7 +74,7 @@ class CacheManager:
             return data
         return
 
-    async def update(self, table: str, key: str, data: Dict[str, object]):
+    async def update(self, table: str, key: str, data: dict[str, object]):
         """Update the cache"""
         if self._app.mdb is None:
             return

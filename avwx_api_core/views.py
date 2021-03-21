@@ -7,7 +7,7 @@ Core API view handlers
 # stdlib
 from datetime import datetime, timezone
 from functools import wraps
-from typing import Callable, List, Tuple
+from typing import Callable, Optional
 
 # library
 import yaml
@@ -29,7 +29,7 @@ class BaseView(Resource):
     # Replace the key's name in the final response
     _key_repl: dict = None
     # Remove the following keys from the final response
-    _key_remv: List[str] = None
+    _key_remv: list[str] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -108,8 +108,8 @@ def make_token_check(app: Quart) -> Callable:
                     report_type = kwargs.get("report_type", self.report_type)
                 data = self.make_example_response(code, report_type, token)
                 return self.make_response(data, code=code)
-            if self.include_token:
-                kwargs["token"] = token
+            if error := self.validate_token_parameters(token, *args):
+                return self.make_response(error, code=400)
             return await func(self, *args, **kwargs)
 
         return wrapper
@@ -132,12 +132,9 @@ class AuthView(BaseView):
 
     # Whitelist of token plan types to access this endpoint
     # If None, all tokens are allowed
-    plan_types: Tuple[str] = None
+    plan_types: tuple[str] = None
 
-    # If True, add "token: Token" to route kwargs
-    include_token: bool = False
-
-    async def validate_token(self, token_manager: TokenManager) -> Tuple[int, Token]:
+    async def validate_token(self, token_manager: TokenManager) -> tuple[int, Token]:
         """Validates thats an authorization token exists and is active
 
         Returns the response code and Token object
@@ -159,6 +156,12 @@ class AuthView(BaseView):
         if auth_token and not await token_manager.increment(auth_token):
             return 429, auth_token
         return 200, auth_token
+
+    def validate_token_parameters(
+        self, token: Token, *args
+    ) -> Optional[dict]:  # pylint: disable=unused-argument,no-self-use
+        """Returns an error payload if parameter validation doesn't match plan level"""
+        return None
 
     # pylint: disable=unused-argument,no-self-use
     def get_example_file(self, report_type: str) -> dict:
