@@ -5,9 +5,10 @@ MongoDB document cache management
 # stdlib
 from copy import copy
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional
 
 # library
+from pymongo import UpdateOne
 from quart import Quart
 
 # module
@@ -31,6 +32,12 @@ def _replace_keys(data: Optional[dict], key: str, by_key: str) -> Optional[dict]
             data[by_key] = data.pop(key)
         if isinstance(d_val, dict):
             data[d_key] = _replace_keys(d_val, key, by_key)
+    return data
+
+
+def _process_data(data: dict) -> dict:
+    data = _replace_keys(copy(data), "$", "_$")
+    data["timestamp"] = datetime.now(tz=timezone.utc)
     return data
 
 
@@ -74,14 +81,24 @@ class CacheManager:
             return data
         return
 
-    async def update(self, table: str, key: str, data: dict[str, object]):
+    async def update(self, table: str, key: str, data: dict[str, Any]):
         """Update the cache"""
         if self._app.mdb is None:
             return
-        data = _replace_keys(copy(data), "$", "_$")
-        data["timestamp"] = datetime.now(tz=timezone.utc)
         update = self._app.mdb.cache[table.lower()].update_one(
-            {"_id": key}, {"$set": data}, upsert=True
+            {"_id": key}, {"$set": _process_data(data)}, upsert=True
         )
         await mongo_handler(update)
-        return
+
+    async def update_many(
+        self, table: str, keys: list[str], data: list[dict[str, Any]]
+    ):
+        """Update many items in the cache"""
+        if self._app.mdb is None:
+            return
+        updates = [
+            UpdateOne({"_id": k}, {"$set": _process_data(d)}, upsert=True)
+            for k, d in zip(keys, data)
+        ]
+        update = self._app.mdb.cache[table.lower()].bulk_write(updates, ordered=False)
+        await mongo_handler(update)

@@ -157,9 +157,8 @@ class AuthView(BaseView):
             return 429, auth_token
         return 200, auth_token
 
-    def validate_token_parameters(
-        self, token: Token, *args
-    ) -> Optional[dict]:  # pylint: disable=unused-argument,no-self-use
+    # pylint: disable=unused-argument,no-self-use
+    def validate_token_parameters(self, token: Token, *args) -> Optional[dict]:
         """Returns an error payload if parameter validation doesn't match plan level"""
         return None
 
