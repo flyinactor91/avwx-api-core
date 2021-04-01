@@ -2,7 +2,7 @@
 avwx_api_core Package Setup
 """
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 
 setup(
@@ -14,10 +14,9 @@ setup(
     author_email="michael@mdupont.com",
     license="MIT",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
-    python_requires=">= 3.7",
+    python_requires=">= 3.9",
     install_requires=[
         "avwx-engine>=1.6",
         "dicttoxml~=1.7",
@@ -28,7 +27,7 @@ setup(
         "quart-openapi>=1.7.1",
         "voluptuous~=0.12",
     ],
-    packages=find_packages(),
+    packages=find_namespace_packages(include=["avwx_api_core*"]),
     package_data={"avwx_api_core.data": ["navaids.json"]},
     tests_require=["pytest-asyncio~=0.14"],
 )
