@@ -1,4 +1,4 @@
-avwx-engine[scipy]==1.6.3
+avwx-engine>=1.6
 dicttoxml~=1.7
 dnspython~=2.1
 motor~=2.3
