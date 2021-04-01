@@ -19,6 +19,7 @@ setup(
     ],
     python_requires=">= 3.7",
     install_requires=[
+        "avwx-engine>=1.6",
         "dicttoxml~=1.7",
         "dnspython~=2.1",
         "motor~=2.3",
@@ -28,5 +29,6 @@ setup(
         "voluptuous~=0.12",
     ],
     packages=find_packages(),
+    package_data={"avwx_api_core.data": ["navaids.json"]},
     tests_require=["pytest-asyncio~=0.14"],
 )
