@@ -27,34 +27,31 @@ class BaseView(Resource):
     note: str = None
 
     # Replace the key's name in the final response
-    _key_repl: dict = None
+    key_repl: dict = None
     # Remove the following keys from the final response
-    _key_remv: list[str] = None
+    key_remv: list[str] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self._key_repl is None:
-            self._key_repl = {}
-        if self._key_remv is None:
-            self._key_remv = []
+        if self.key_repl is None:
+            self.key_repl = {}
+        if self.key_remv is None:
+            self.key_remv = []
 
-    def format_dict(self, output: dict) -> dict:
-        """Formats a dict by recursively replacing and removing key
-
-        Returns the item as-is if not a dict
-        """
+    def format_output(self, output: dict) -> dict:
+        """Formats a dict by recursively replacing or removing keys"""
+        if isinstance(output, list):
+            return [self.format_output(item) for item in output]
         if not isinstance(output, dict):
             return output
         resp = {}
         for key, val in output.items():
-            if key in self._key_remv:
+            if key in self.key_remv:
                 continue
-            if key in self._key_repl:
-                key = self._key_repl[key]
-            if isinstance(val, dict):
-                val = self.format_dict(val)
-            elif isinstance(val, list):
-                val = [self.format_dict(item) for item in val]
+            if key in self.key_repl:
+                key = self.key_repl[key]
+            if isinstance(val, (dict, list)):
+                val = self.format_output(val)
             resp[key] = val
         return resp
 
@@ -68,7 +65,7 @@ class BaseView(Resource):
         root: str = "AVWX",
     ) -> Response:
         """Returns the output string based on format param"""
-        output = self.format_dict(output)
+        output = self.format_output(output)
         if "error" in output and meta not in output:
             output["timestamp"] = datetime.now(tz=timezone.utc)
         if self.note and isinstance(output, dict):

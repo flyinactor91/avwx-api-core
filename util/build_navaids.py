@@ -7,7 +7,9 @@ from pathlib import Path
 import httpx
 
 URL = "https://ourairports.com/data/navaids.csv"
-FILE_PATH = Path(__file__).parent.parent.joinpath("avwx_api", "data", "navaids.json")
+FILE_PATH = Path(__file__).parent.parent.joinpath(
+    "avwx_api_core", "data", "navaids.json"
+)
 
 
 def main():
