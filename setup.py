@@ -23,11 +23,11 @@ setup(
         "dnspython~=2.1",
         "motor~=2.4",
         "pyyaml~=5.4",
-        "quart>=0.14",
+        "quart~=0.15",
         "quart-openapi>=1.7.1",
         "voluptuous~=0.12",
     ],
     packages=find_namespace_packages(include=["avwx_api_core*"]),
     package_data={"avwx_api_core.data": ["navaids.json"]},
-    tests_require=["pytest-asyncio~=0.14"],
+    tests_require=["pytest-asyncio>=0.15.1"],
 )

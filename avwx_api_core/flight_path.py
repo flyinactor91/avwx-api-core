@@ -8,13 +8,16 @@ import math
 from pathlib import Path
 from typing import Optional, Union
 
+# library
+from voluptuous import Invalid
+
 # module
 from avwx import Station
 from avwx.exceptions import BadStation
 from avwx_api_core.structs import Coord
 
 NAV_PATH = Path(__file__).parent.joinpath("data", "navaids.json")
-NAVAIDS = json.load(NAV_PATH.open())
+NAVAIDS: dict = json.load(NAV_PATH.open())
 
 QCoord = Union[Coord, list[Coord]]
 
@@ -69,10 +72,14 @@ def to_coordinates(
     coord = values[0]
     if isinstance(coord, str):
         try:
+            # No IATA due to navaid conflict
             station = Station.from_icao(coord)
             coord = (station.latitude, station.longitude)
         except BadStation:
-            coords = NAVAIDS[coord]
+            coords = NAVAIDS.get(coord)
+            if coords is None:
+                # pylint: disable=raise-missing-from
+                raise Invalid(f"Could not find coordinates for {coord}")
             if len(coords) == 1:
                 coord = coords[0]
             else:

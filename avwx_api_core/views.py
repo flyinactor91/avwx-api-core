@@ -131,6 +131,15 @@ class AuthView(BaseView):
     # If None, all tokens are allowed
     plan_types: tuple[str] = None
 
+    @staticmethod
+    def _auth_token() -> Optional[str]:
+        """Extracts the supplied API token from the request"""
+        return (
+            request.headers.get("AUTHORIZATION")
+            or request.headers.get("Authorization")
+            or request.args.get("token")
+        )
+
     async def validate_token(self, token_manager: TokenManager) -> tuple[int, Token]:
         """Validates thats an authorization token exists and is active
 
@@ -138,9 +147,8 @@ class AuthView(BaseView):
         """
         if not token_manager.active:
             return 200, None
-        auth_token = request.headers.get("Authorization") or request.args.get("token")
         try:
-            auth_token = validate.Token(auth_token)
+            auth_token = validate.Token(self._auth_token())
         except (Invalid, MultipleInvalid):
             return 401, None
         auth_token = await token_manager.get(auth_token)
