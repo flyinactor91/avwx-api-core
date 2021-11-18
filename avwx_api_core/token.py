@@ -31,8 +31,7 @@ class Token:
     name: str
     type: str
 
-    overage: bool = False  # Plan
-    user_overage: bool = False  # User
+    overage: bool = False
 
     @property
     def is_developer(self) -> bool:
