@@ -50,6 +50,7 @@ class TokenCountCache(DelayedCounter):
                 "plan.name": 1,
                 "plan.type": 1,
                 "allow_overage": 1,
+                "addons.key": 1,
             },
         )
         data = await mongo_handler(search)
@@ -57,10 +58,12 @@ class TokenCountCache(DelayedCounter):
             return None
         is_dev = token.startswith("dev-")
         tokens = [t for t in data["tokens"] if is_dev == t["value"].startswith("dev-")]
+        addons = [addon["key"] for addon in data["addons"]]
         ret = {
             "user": data["_id"],
             "tokens": tokens,
-            "overage": data.get("allow_overage", False),
+            "addons": addons,
+            "overage": data.get("allow_overage") or "overage" in addons,
             **data["plan"],
         }
         if is_dev:

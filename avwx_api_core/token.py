@@ -5,7 +5,7 @@ Token authentication management
 # pylint: disable=too-many-instance-attributes
 
 # stdlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union
 
 # library
@@ -31,6 +31,7 @@ class Token:
     name: str
     type: str
 
+    addons: list[str] = field(default_factory=[])
     overage: bool = False
 
     @property

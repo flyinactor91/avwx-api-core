@@ -107,7 +107,7 @@ def make_token_check(app: Quart) -> Callable:
                 return self.make_response(data, code=code)
             if error := self.validate_token_parameters(token, *args):
                 return self.make_response(error, code=400)
-            return await func(self, *args, **kwargs)
+            return await func(self, *args, token, **kwargs)
 
         return wrapper
 
