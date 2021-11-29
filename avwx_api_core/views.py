@@ -181,12 +181,12 @@ class AuthView(BaseView):
         # Special handling for 403 errors
         if error_code == 403:
             if token is None:
-                msg += "could not be found"
+                msg += ". Token value could not be found"
             elif not token.active:
-                msg += "is inactive"
+                msg += ". Token marked as inactive"
             elif not token.valid_type(self.plan_types):
-                msg += f"plan ({token.type}) does not have permission to access this resource"
-                msg += f". Requires a plan of type: {'/'.join(self.plan_types or [])}"
+                allowed = "/".join(self.plan_types or [])
+                msg += f'. Plan "{token.type}" must be {allowed}'
         if data:
             msg += ". Here's an example response for testing purposes"
         if isinstance(data, dict):
