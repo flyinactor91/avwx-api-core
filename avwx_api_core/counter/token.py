@@ -58,7 +58,7 @@ class TokenCountCache(DelayedCounter):
             return None
         is_dev = token.startswith("dev-")
         tokens = [t for t in data["tokens"] if is_dev == t["value"].startswith("dev-")]
-        addons = [addon["key"] for addon in data["addons"]]
+        addons = [addon["key"] for addon in data.get("addons", tuple())]
         ret = {
             "user": data["_id"],
             "tokens": tokens,
