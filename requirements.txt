@@ -1,4 +1,4 @@
-git+https://github.com/avwx-rest/dicttoxml@1.7.5
+git+https://github.com/avwx-rest/dicttoxml
 
 avwx-engine>=1.7
 dnspython~=2.2
