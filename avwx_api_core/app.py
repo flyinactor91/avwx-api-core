@@ -15,19 +15,19 @@ class CustomJSONEncoder(JSONEncoder):
     """Customize the JSON date format"""
 
     # pylint: disable=arguments-differ
-    def default(self, obj):
+    def default(self, object_):
         try:
-            if isinstance(obj, datetime):
-                new_obj = obj.replace(tzinfo=None)
-                return new_obj.isoformat() + "Z"
-            if isinstance(obj, date):
-                return obj.isoformat()
-            iterable = iter(obj)
+            if isinstance(object_, datetime):
+                new_object_ = object_.replace(tzinfo=None)
+                return new_object_.isoformat() + "Z"
+            if isinstance(object_, date):
+                return object_.isoformat()
+            iterable = iter(object_)
         except TypeError:
             pass
         else:
             return list(iterable)
-        return JSONEncoder.default(self, obj)
+        return JSONEncoder.default(self, object_)
 
 
 CORS_HEADERS = ["Authorization", "Content-Type"]

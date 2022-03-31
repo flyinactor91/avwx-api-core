@@ -10,7 +10,7 @@ from xmltodict import parse as parsexml
 # module
 from avwx.exceptions import InvalidRequest
 from avwx.service.base import CallsHTTP
-from avwx_api_core.structs import Coord
+from avwx.structs import Coord
 
 
 class FlightRouter(CallsHTTP):
@@ -49,7 +49,7 @@ class FlightRouter(CallsHTTP):
         target_type = self._type_map.get(report_type, report_type)
         if target_type not in self._valid_types:
             raise InvalidRequest(f"{report_type} is not a valid router report type")
-        flight_path = ";".join(f"{lon},{lat}" for lat, lon in route)
+        flight_path = ";".join(f"{coord.lon},{coord.lat}" for coord in route)
         params = {
             "dataSource": target_type + "s",
             "requestType": "retrieve",

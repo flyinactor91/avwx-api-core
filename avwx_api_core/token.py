@@ -6,7 +6,6 @@ Token authentication management
 
 # stdlib
 from dataclasses import dataclass, field
-from typing import Union
 
 # library
 from bson import ObjectId
@@ -68,7 +67,7 @@ class TokenManager:
         data = await counter.get(value)
         return Token(**data) if data else None
 
-    async def increment(self, token: Union[str, Token]) -> bool:
+    async def increment(self, token: str | Token) -> bool:
         """Increment a token count by Token object or raw value"""
         if isinstance(token, Token):
             token = token.value

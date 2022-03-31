@@ -12,8 +12,8 @@ from typing import Callable
 from voluptuous import All, Coerce, Invalid, Length, Range
 
 # module
-from avwx_api_core import flight_path
-from avwx_api_core.structs import Coord
+from avwx.structs import Coord
+from avwx.flight_path import to_coordinates
 
 
 Latitude = All(Coerce(float), Range(-90, 90))
@@ -49,6 +49,5 @@ def FlightRoute(values: str) -> list[Coord]:
     for i, val in enumerate(values):
         if "," in val:
             loc = val.split(",")
-            values[i] = (loc[0], loc[1])
-    values = flight_path.to_coordinates(values)
-    return [(Latitude(lat), Longitude(lon)) for lat, lon in values]
+            values[i] = Coord(lat=Latitude(loc[0]), lon=Longitude(loc[1]), repr=val)
+    return to_coordinates(values)

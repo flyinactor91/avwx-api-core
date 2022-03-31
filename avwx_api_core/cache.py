@@ -16,7 +16,7 @@ from avwx_api_core.util.handler import mongo_handler
 
 
 # Table expiration in minutes
-EXPIRES = {"token": 15}
+EXPIRES = {"token": 15, "airsigmet": 15}
 DEFAULT_EXPIRES = 2
 
 
@@ -62,8 +62,31 @@ class CacheManager:
         minutes = self.expires.get(table, DEFAULT_EXPIRES)
         return datetime.now(tz=timezone.utc) > time + timedelta(minutes=minutes)
 
-    async def get(self, table: str, key: str, force: bool = False) -> dict[str, object]:
-        """Returns the current cached data for a report type and station or None
+    def _include_item(self, item: Any, table: str) -> bool:
+        return isinstance(item, dict) and not self.has_expired(
+            item.get("timestamp"), table
+        )
+
+    async def all(self, table: str, force: bool = False) -> list[dict]:
+        """Returns all cached data for a report type
+
+        By default, will only return items where the cache timestamp has not been exceeded
+        Can force the cache to return all if force is True
+        """
+        if self._app.mdb is None:
+            return []
+
+        async def search():
+            return [i async for i in self._app.mdb.cache[table.lower()].find()]
+
+        data = await mongo_handler(search())
+        data = [_replace_keys(i, "_$", "$") for i in data]
+        if force:
+            return data
+        return [i for i in data if self._include_item(i, table)]
+
+    async def get(self, table: str, key: str, force: bool = False) -> Optional[dict]:
+        """Returns the current cached data for a report type and station
 
         By default, will only return if the cache timestamp has not been exceeded
         Can force the cache to return if force is True
@@ -75,13 +98,11 @@ class CacheManager:
         data = _replace_keys(data, "_$", "$")
         if force:
             return data
-        if isinstance(data, dict) and not self.has_expired(
-            data.get("timestamp"), table
-        ):
+        if self._include_item(data, table):
             return data
         return
 
-    async def update(self, table: str, key: str, data: dict[str, Any]):
+    async def update(self, table: str, key: str, data: dict) -> None:
         """Update the cache"""
         if self._app.mdb is None:
             return
@@ -90,9 +111,7 @@ class CacheManager:
         )
         await mongo_handler(update)
 
-    async def update_many(
-        self, table: str, keys: list[str], data: list[dict[str, Any]]
-    ):
+    async def update_many(self, table: str, keys: list[str], data: list[dict]) -> None:
         """Update many items in the cache"""
         if self._app.mdb is None:
             return
