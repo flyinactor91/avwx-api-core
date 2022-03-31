@@ -1,7 +1,12 @@
+"""
+Updates instances where user tokens have no ID
+"""
+
+from os import environ
 from bson import ObjectId
 from pymongo import MongoClient
 
-DB = MongoClient("mongodb+srv://avwx-prod:tjQJ4beYyb13qGio@avwx-prod-w4lyb.azure.mongodb.net/account?retryWrites=true&w=majority")
+DB = MongoClient(environ["MONGO_URI"])
 
 query = {"$and": [{"tokens._id": {"$exists": False}}, {"tokens.value": {"$exists": True}}]}
 for user in DB.account.user.find(query, {"tokens": 1}):
