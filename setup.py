@@ -18,7 +18,7 @@ setup(
     ],
     python_requires=">= 3.10",
     install_requires=[
-        "dicttoxml @ git+git://github.com/avwx-rest/dicttoxml.git@2306cc8fda3d965d543344f4c618605c46f3a345#egg=dicttoxml",
+        "dicttoxml @ git+https://github.com/avwx-rest/dicttoxml",
         "avwx-engine>=1.7",
         "dnspython~=2.2",
         "motor~=2.5",
